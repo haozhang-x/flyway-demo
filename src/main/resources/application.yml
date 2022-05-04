@@ -1,0 +1,23 @@
+server:
+  port: 8090
+spring:
+  flyway:
+    # flyway 的 clean 命令会删除指定 schema 下的所有 table, 应该禁掉
+    clean-disabled: true
+    #多人协作开发, 很可能先 apply 了自己本地的最新 SQL 代码, 然后发现其他同事早先时候提交的 SQL 代码还没有 apply,
+    #所以 开发环境应该设置 spring.flyway.outOfOrder=true, 这样 flyway 将能加载漏掉的老版本 SQL 文件;
+    #生产环境建议为 spring.flyway.outOfOrder=false
+    out-of-order: true
+    #设定 flyway 的 metadata 表名, 缺省为 flyway_schema_history
+    #table: flyway_schema_history
+    #可重复执行的migration的前缀，默认R
+    repeatable-sql-migration-prefix: R
+    #migration的前缀，默认V
+    sql-migration-prefix: V
+    #当有校验错误的时候，清理
+    clean-on-validation-error: false
+  datasource:
+    username: flyway
+    password: flyway
+    url: jdbc:oracle:thin:@localhost:1521:XE
+    driver-class-name: oracle.jdbc.driver.OracleDriver

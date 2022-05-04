@@ -1,0 +1,130 @@
+= 数据库迁移工具 Flyway
+## Flyway 介绍
+Flyway 是一个开源的数据库迁移工具。它强烈支持简单和约定而不是配置。
+
+它仅基于 7 个基本命令： Migrate、 Clean、 Info、 Validate、 Undo、 Baseline和 Repair。
+
+迁移可以用SQL （支持特定于数据库的语法（如 PL/SQL、T-SQL 等））或Java （用于高级数据转换或处理 LOB）编写。
+
+它有一个命令行客户端。如果您在 JVM 上，我们建议使用Java API 在应用程序启动时迁移数据库。或者，您也可以使用Maven 插件 或Gradle 插件。
+
+如果这还不够，还有 适用于 Spring Boot、Dropwizard、Grails、Play、SBT、Ant、Griffon、Grunt、Ninja 等的插件！
+
+支持的数据库有 Oracle、 SQL Server（包括 Amazon RDS 和 Azure SQL 数据库）、 Azure Synapse（以前的数据仓库）、 DB2、 MySQL（包括 Amazon RDS、Azure 数据库和 Google Cloud SQL）、 Aurora MySQL、 MariaDB、 Percona XtraDB Cluster、 TestContainers , PostgreSQL (包括 Amazon RDS, Azure Database, Google Cloud SQL, TimescaleDB, YugabyteDB & Heroku), Aurora PostgreSQL , Redshift , CockroachDB , SAP HANA , Sybase ASE、 Informix、 H2、 HSQLDB、 Derby、 Snowflake、 SQLite和 Firebird。
+
+== Spring Boot 集成 Flyway
+
+=== 添加如下的依赖
+
+[source,groovy]
+----
+implementation 'org.flywaydb:flyway-core'
+----
+
+=== 配置不清空schema下的table
+
+[source,yaml]
+----
+spring:
+  flyway:
+    # flyway 的 clean 命令会删除指定 schema 下的所有 table, 应该禁掉
+    clean-disabled: true
+----
+
+=== resources db/migration 存放要进行迁移的文件
+
+db/migration 可配置
+
+==== 迁移类型
+
+. 版本化迁移：只执行一次，不可进行修改
+. 撤消迁移：进行撤销版本化迁移，收费版本可用
+. 可重复迁移：可以执行多次的迁移，可以进行修改，修改后重新执行
+
+==== 为了被 Flyway 采用，SQL 迁移必须符合以下命名模式：
+
+. 版本化迁移 V2__create_student.sql
+. 撤消迁移 U2__create_student.sql
+. 可重复的迁移 R__add_student.sql
+
+==== 文件名如下组成：
+
+. 前缀：V用于版本化（可配置）、 U撤消（可配置）和 R可重复迁移（可配置）
+. 版本：带有点或下划线的版本可以根据需要分隔任意数量的部分（不适用于可重复的迁移）
+. 分隔符：（__两个下划线）（可配置）
+. 说明：下划线或空格分隔单词
+. 后缀：（可配置.sql）
+
+=== 在 Spring Boot 应用程序启动时，自动进行迁移
+
+[source]
+----
+2022-05-04 15:11:36.325  INFO 13303 --- [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 7.7.3 by Redgate
+2022-05-04 15:11:36.642  INFO 13303 --- [           main] o.f.c.i.database.base.DatabaseType       : Database: jdbc:oracle:thin:@localhost:1521:XE (Oracle 12.1)
+2022-05-04 15:11:36.793  INFO 13303 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 3 migrations (execution time 00:00.023s)
+2022-05-04 15:11:36.815  INFO 13303 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "FLYWAY": << Empty Schema >>
+2022-05-04 15:11:36.815  WARN 13303 --- [           main] o.f.core.internal.command.DbMigrate      : outOfOrder mode is active. Migration of schema "FLYWAY" may not be reproducible.
+2022-05-04 15:11:36.830  INFO 13303 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "FLYWAY" to version "20220504113919 - create student"
+2022-05-04 15:11:36.873  INFO 13303 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : 0 rows affected
+2022-05-04 15:11:36.938  INFO 13303 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "FLYWAY" to version "20220504132902 - create seq"
+2022-05-04 15:11:36.944  INFO 13303 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : 0 rows affected
+2022-05-04 15:11:36.977  INFO 13303 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "FLYWAY" to version "20220504135829 - select student"
+2022-05-04 15:11:36.982  INFO 13303 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : +----+------+
+| ID | NAME |
++----+------+
+| No rows r |
++----+------+
+
+2022-05-04 15:11:37.013  INFO 13303 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 3 migrations to schema "FLYWAY", now at version v20220504135829 (execution time 00:00.208s)
+----
+
+=== 迁移会记录到 flyway_schema_history 表中
+
+|===
+|installed_rank |version |description |type |script |checksum |installed_by |installed_on |execution_time |success
+
+|1
+|20220504113919
+|create student
+|SQL
+|V20220504113919__create_student.sql
+|1002084112
+|FLYWAY
+|2022-05-04 15:11:36.909950
+|48
+|1
+
+|2
+|20220504132902
+|create seq
+|SQL
+|V20220504132902__create_seq.sql
+|-1063390250
+|FLYWAY
+|2022-05-04 15:11:36.956655
+|9
+|1
+
+|3
+|20220504135829
+|select student
+|SQL
+|V20220504135829__select_student.sql
+|-1463386058
+|FLYWAY
+|2022-05-04 15:11:36.995406
+|9
+|1
+|===
+
+== IDEA插件
+
+Flyway Migration Creation
+
+使用Flyway Migration Creation，可以很方便的在IDEA中创建Versioned Migration和Repeatable Migration
+
+== 其他
+
+官方网站：https://flywaydb.org
+
+GitHub：https://github.com/flyway/flyway
