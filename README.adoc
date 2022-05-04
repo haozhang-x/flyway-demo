@@ -119,7 +119,7 @@ db/migration 可配置
 
 == IDEA插件
 
-Flyway Migration Creation
+https://plugins.jetbrains.com/plugin/8597-flyway-migration-creation[Flyway Migration Creation]
 
 使用Flyway Migration Creation，可以很方便的在IDEA中创建Versioned Migration和Repeatable Migration
 
